@@ -97,7 +97,7 @@ app.get('/500', get500);
 app.use(get404);
 
 app.use((error, req, res, next) => {
-  console.log(req.session);
+  console.log(req);
   res.status(500).render('500', {
     pageTitle: 'Server Error',
     path: '/500',
