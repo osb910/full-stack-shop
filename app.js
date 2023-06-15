@@ -26,17 +26,18 @@ import {get404, get500} from './controllers/error.js';
 const app = express();
 const MongoDBStore = mongodbSession(session);
 const store = new MongoDBStore({
-    uri: mongoUri,
-    collection: 'sessions'
+  uri: mongoUri,
+  collection: 'sessions',
 });
 
 const fileStorage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'data/images'),
-    filename: (req, file, cb) => cb(null, `${crypto.randomUUID()}_${file.originalname}`)
+  destination: (req, file, cb) => cb(null, 'data/images'),
+  filename: (req, file, cb) =>
+    cb(null, `${crypto.randomUUID()}_${file.originalname}`),
 });
 
 const fileFilter = (req, file, cb) => {
-    cb(null, /image\/(pn|jpe?|sv)g/.test(file.mimetype));
+  cb(null, /image\/(pn|jpe?|sv)g/.test(file.mimetype));
 };
 
 // TEMPLATING ENGINE
@@ -44,31 +45,35 @@ app.set('view engine', 'ejs');
 app.set('views', 'views'); // default
 
 // MIDDLEWARE
-app.use(helmet.contentSecurityPolicy({
-  directives: {
-    ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-    'script-src': ["'self'", 'https://esm.sh', 'https://js.stripe.com'],
-    'frame-src': ["'self'", 'https://js.stripe.com'],
-  },
-}));
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      'script-src': ["'self'", 'https://esm.sh', 'https://js.stripe.com'],
+      'frame-src': ["'self'", 'https://js.stripe.com'],
+    },
+  })
+);
 app.use(express.urlencoded({extended: true}));
 app.use(multer({storage: fileStorage, fileFilter}).single('imageFile'));
 
 app.use(express.static(path.join(rootDir(), 'public')));
 app.use('/data/images', express.static(path.join(rootDir(), 'data', 'images')));
 
-app.use(session({
+app.use(
+  session({
     secret: 'secret',
     resave: false,
     saveUninitialized: false,
-    store
-}));
+    store,
+  })
+);
 
 app.use(flash());
 
 app.use((req, res, next) => {
-    res.locals.isAuthenticated = req.session.isLoggedIn;
-    next();
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  next();
 });
 
 app.use(async (req, res, next) => {
@@ -83,7 +88,6 @@ app.use(async (req, res, next) => {
   }
 });
 
-
 // ROUTING
 app.use('/admin', isAuth, adminRoutes);
 app.use(shopRoutes);
@@ -93,24 +97,23 @@ app.get('/500', get500);
 app.use(get404);
 
 app.use((error, req, res, next) => {
-    res
-        .status(500)
-        .render('500', {
-            pageTitle: 'Server Error',
-            path: '/500',
-            isAuthenticated: req.session.isLoggedIn
-        });
+  console.log(req.session);
+  res.status(500).render('500', {
+    pageTitle: 'Server Error',
+    path: '/500',
+    isAuthenticated: req.session.isLoggedIn,
+  });
 });
-
 
 (async () => {
   try {
     await mongoConnect();
-    const admin = (await User.findOne({isAdmin: true})) ?? (await createAdmin());
+    const admin =
+      (await User.findOne({isAdmin: true})) ?? (await createAdmin());
     app.listen(process.env.PORT, async () => {
       console.log(`Running on port ${process.env.PORT}`);
     });
-  } catch(err) {
+  } catch (err) {
     console.error(err);
     throw err;
   }
