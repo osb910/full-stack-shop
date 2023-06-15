@@ -20,12 +20,14 @@ const getAddProduct = (req, res) => {
 
 const getProducts = async (req, res, next) => {
   try {
-    const products = await Product.find({userId: req.user._id}).populate('userId', 'name');
+    const products = await Product.find({userId: req.user._id}).populate(
+      'userId',
+      'name'
+    );
     res.render('admin/products', {
       prods: products,
       pageTitle: 'All Products',
       path: '/admin/products',
-
     });
   } catch (err) {
     return serverError(err, next);
@@ -55,6 +57,7 @@ const getEditProduct = async (req, res, next) => {
 };
 
 const postAddProduct = async (req, res, next) => {
+  console.log('postAddProduct');
   const {title, description, price} = req.body;
   const imageFile = req.file;
   const errors = validationResult(req);
@@ -137,7 +140,10 @@ const deleteProduct = async (req, res, next) => {
     for (const user of allUsers) {
       await user.removeFromCart(prodId);
     }
-    const removedDoc = await Product.findOneAndRemove({_id: prodId, userId: req.user._id});
+    const removedDoc = await Product.findOneAndRemove({
+      _id: prodId,
+      userId: req.user._id,
+    });
     if (!removedDoc) return next(new Error('Product not found'));
     deleteFile(removedDoc.imageUrl);
     res.status(204).json({message: 'deleted'});
